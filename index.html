@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGAvatar: Relightable 4D Gaussian Avatar from Monocular Videos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Noto Sans Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- MathJax for Equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #2563eb, #9333ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-bg {
+            background: radial-gradient(circle at top right, #eff6ff, #ffffff);
+        }
+        /* Custom scrollbar for galleries */
+        .gallery-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .gallery-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .gallery-scroll::-webkit-scrollbar-thumb {
+            background: #c7c7c7;
+            border-radius: 4px;
+        }
+        .gallery-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0 font-bold text-xl tracking-tighter cursor-pointer hover:opacity-80 transition" onclick="window.scrollTo(0,0)">
+                    <span class="text-blue-600">RGAvatar</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#abstract" class="text-gray-600 hover:text-blue-600 transition font-medium">Abstract</a>
+                    <a href="#video" class="text-gray-600 hover:text-blue-600 transition font-medium">Video</a>
+                    <a href="#method" class="text-gray-600 hover:text-blue-600 transition font-medium">Method</a>
+                    <a href="#gallery" class="text-gray-600 hover:text-blue-600 transition font-medium">Results</a>
+                    <!-- <a href="#results" class="text-gray-600 hover:text-blue-600 transition font-medium"> comparisons</a> -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="hero-bg pt-20 pb-16 text-center px-4">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-8 leading-tight tracking-tight">
+                <span class="gradient-text">RGAvatar</span>: Relightable 4D Gaussian Avatar from Monocular Videos (TVCG 2025)
+            </h1>
+            
+            <div class="flex flex-wrap justify-center gap-x-8 gap-y-2 text-lg mb-8 text-blue-600 font-medium">
+                <span class="hover:underline cursor-pointer">Zhe Fan<sup>1</sup>,</span>
+                <span class="hover:underline cursor-pointer">
+                <a href="https://shishenghuang.github.io/index/">Shi-Sheng Huang</a><sup>2</sup>,</span>
+                <span class="hover:underline cursor-pointer">
+                Yichi Zhang<sup>1</sup>,
+                </span>
+                <span class="hover:underline cursor-pointer">
+                Dachao Shang<sup>2</sup>,
+                </span>
+                <span class="hover:underline cursor-pointer">
+                <a href="http://staff.ustc.edu.cn/~juyong/">Juyong Zhang</a><sup>3</sup>,</span>
+                <span class="hover:underline cursor-pointer">
+                <a href="https://yudongguo.github.io/">Yudong Guo</a><sup>3</sup>,</span>                                                
+                <span class="hover:underline cursor-pointer">
+                <a href="https://vmcl.bnu.edu.cn/group/teacher/dcdaea79b5e54b75b532795109a85a34.htm">Hua Huang</a><sup>2</sup>,
+                </span>               
+            </div>
+            <div class="flex flex-wrap text-gray-500 justify-center gap-x-8 gap-y-2 text-lg mb-8 font-medium">
+                <span ><sup>1</sup>Beijing Institute of Technology,</span>
+                <span ><sup>2</sup>Beijing Normal University,</span>
+                <span ><sup>3</sup>University of Science and Technology of China</span>
+            </div>            
+
+            <!-- Links -->
+            <div class="flex justify-center gap-4 mb-12">
+                <a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10907898" class="flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-full hover:bg-gray-700 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform">
+                    <i class="fa-regular fa-file-pdf"></i>
+                    <span>Paper</span>
+                </a>
+                <a href="https://ieeexplore.ieee.org/ielx8/2945/11151252/10907898/supp1-3543603.pdf?arnumber=10907898" class="flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-full hover:bg-gray-700 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform">
+                    <i class="fa-regular fa-file-lines"></i>
+                    <span>Supp. Material</span>
+                </a>
+                <a href="#" class="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-full hover:bg-gray-600 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform">
+                    <i class="fa-brands fa-github"></i>
+                    <span>Code(coming soon)</span>
+                </a>
+            </div>
+
+            <!-- Teaser Image -->
+            <div class="max-w-5xl mx-auto mb-10">
+                <div class="bg-gray-100 rounded-2xl overflow-hidden shadow-2xl border border-gray-300">
+                    <img src="teaser_v2.png" alt="RGAvatar Teaser Figure" class="w-full h-auto">
+                </div>
+                <p class="mt-4 text-sm text-gray-500 italic w-full text-left">
+                    <strong>Figure 1:</strong> RGAvatar enables high-fidelity 4D Gaussian avatar reconstruction from monocular videos with controllable pose, expression, and illumination.
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Abstract -->
+    <section id="abstract" class="py-12 bg-white border-b border-gray-100">
+        <div class="max-w-4xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-900">Abstract</h2>
+            <p class="text-justify text-lg leading-relaxed text-gray-600">
+                Relightable 4D avatar reconstruction which enables high fidelity and real-time rendering continues to be a crucial but challenging problem, especially from monocular videos. Previous NeRF-based 4D avatars enable photo-realistic relighting but are too slow for rendering, while point-based or mesh-based 4D avatars are efficient but have limited rendering quality. The recent success of 3D Gaussian Splatting, i.e., 3DGS, has inspired a series of impressive 4D Gaussian avatars, however, most of which only focus on faithful appearance reconstruction but are not relightable. To address such issues, this paper proposes a new <strong>R</strong>elightable 4D <strong>G</strong>aussian <strong>A</strong>vatar, i.e., RGAvatar, tailored for high fidelity relightable rendering from monocular videos. Our key idea is to introduce a new relightable 4D Gaussian representation, based on which we can directly perform high fidelity Physically Based Rendering, and an effective joint learning mechanism for <em>compact</em> 4D Gaussian reconstruction with SDF regulation and <em>accurate</em> materials and lighting decomposition. By comparing with previous state-of-the-art approaches, RGAvatar can significantly outperform previous approaches in relightable rendering quality and speed. To our best knowledge, RGAvatar contributes a new state-of-the-art 4D Gaussian avatar from monocular videos, which enables high fidelity relightable rendering in a quite efficient manner.
+            </p>
+        </div>
+    </section>
+
+    <!-- Demo Video -->
+    <section id="video" class="py-16 bg-gray-50">
+        <div class="max-w-5xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-10 text-gray-900">
+                <i class="fa-solid fa-clapperboard text-blue-600 mr-2"></i> Demo Video
+            </h2>
+            <div class="rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-black">
+                <!-- Video Player -->
+                <video class="w-full aspect-video" controls poster="">
+                    <source src="RGAvatar_supplemental_video.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <p class="text-center mt-4 text-gray-600">
+                This video presents some qualitative results, including reconstruction evaluation and comparisons with SOTA methods.
+            </p>
+          
+        </div>
+    </section>
+
+    <!-- Method -->
+    <section id="method" class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-16 text-gray-900">Methodology</h2>
+            
+            <div class="bg-white p-2 md:p-4 rounded-2xl shadow-lg border border-gray-100 mb-12">
+                <div class="rounded-xl overflow-hidden bg-white">
+                    <img src="overview_new.png" alt="Overall Pipeline" class="h-auto object-contain" style="width:95%; margin-left:5%;">
+                </div>
+                
+                <p class="mt-4 text-gray-600 text-sm font-medium">
+                    <strong>Figure 2: The main pipeline of RGAvatar.</strong> 
+                    <!-- Canonical Gaussian Rig Reconstruction &rarr; AU-prompt Gaussian Diffusion &rarr; Text-to-AU Emotion Controller. -->
+                    The pipeline of RGAvatar. Given monocular video input, we propose to learn the R-4DGS with two learning stages. In the first stage, we aims at a compact 4D Gaussian reconstruction (left), which forces the R-4DGS compactly coherent to the underlying surface of an extra SDF field $\mathcal{F}^{g}$(left top). 
+                    We deform the canonical R-4DGS $\mathcal{\bar{G}}=\{\bar{g}\}$ to $g$ using a deformation field $\mathcal{D}$, in which a Motion Deformation Module is used to deform the centroid position $\bar{\mu}$ from canonical state to dynamic ${\mu}$, and a Shape Deformation Module to deform the rotation and scale. In the next stage, we perform a neural material and lighting decomposition (right), 
+                    by leveraging strong geometry prior from the compact 4D Gaussian reconstruction learning to guide the geometry-aware light visibility prediction using network $\mathcal{F}^v$, which takes the SDF encoding $f_{sdf}$ and LBS deformation encoding$f_{lbs}$ as input. This tailored visibility prediction module leading to more accurate materials (albedo ${b}$, roughness $r$ and fresnel reflectivity $f_0$) and incident light ($L_{env}$) learning for the 4D Gaussians. 
+                </p>
+            </div>
+
+            <!-- <div class="grid md:grid-cols-2 gap-12">
+                <div class="space-y-6">
+                    <h3 class="text-2xl font-bold text-gray-800 border-l-4 border-blue-600 pl-4">AU-prompt Gaussian Diffusion</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Our model encodes audio signals into Action Unit (AU) codes using a <strong>Speech-to-AU Encoder</strong>. These codes guide a Transformer-based diffusion model to predict fine-grained facial motion and Gaussian attributes.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <h3 class="text-2xl font-bold text-gray-800 border-l-4 border-purple-600 pl-4">Text-to-AU Emotion Controller</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        This module establishes a direct mapping from textual emotion prompts (e.g., <em>"The person is smiling"</em>) to AU activation vectors. It allows for precise, semantic-level emotional editing without retraining the core rendering network.
+                    </p>
+                </div>
+            </div> -->
+        </div>
+    </section>
+
+    <!-- Gallery: Text-Driven Editing -->
+    <section id="gallery" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">R-4DGS Reconstruction Evaluation</h2>
+            <p class="text-center text-gray-500 mb-12">
+             the R-4DGS reconstruction results of one subject from our collected dataset.
+            </p>
+
+            <div class="mb-16">
+                <!-- <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">1</div>
+                    <h3 class="text-xl font-bold text-gray-800">Basic & Complex Emotions</h3>
+                </div> -->
+                
+                <div class="bg-white p-2 md:p-3 rounded-xl shadow-lg border border-gray-200">
+                    <div class="overflow-hidden rounded-lg bg-white">
+                            <img src="quality4.png" alt="Basic & Complex Emotions" class="block mx-auto h-auto object-contain rounded border border-gray-100" style="width:80%;">
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600 px-2 pb-2">
+                        <strong>Figure 3:</strong> The visual results of our R-4DGS reconstruction of different subjects. Specifically, We show the diffuse/specular components, normal, BRDFs and relighting results.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- <div class="mb-16">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold shadow-md">2</div>
+                    <h3 class="text-xl font-bold text-gray-800">Fine-grained Expression Control</h3>
+                </div>
+            
+                <div class="bg-white p-2 md:p-3 rounded-xl shadow-lg border border-gray-200">
+                    <div class="overflow-hidden rounded-lg bg-white">
+                        <img src="supp_fig4.png" alt="Fine-grained Expression Control" class="w-full h-auto object-contain">
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600 px-2 pb-2">
+                        <strong>Figure 4:</strong> Handling nuanced prompts such as <em>"An excited person with a radiant smile"</em> or <em>"A shy person with evasive eyes"</em>.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mb-10">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md">3</div>
+                    <h3 class="text-xl font-bold text-gray-800">Intense Emotional States</h3>
+                </div>
+            
+                <div class="bg-white p-2 md:p-3 rounded-xl shadow-lg border border-gray-200">
+                    <div class="overflow-hidden rounded-lg bg-white">
+                        <img src="supp_fig5.png" alt="Intense Emotional States" class="w-full h-auto object-contain">
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600 px-2 pb-2">
+                        <strong>Figure 5:</strong> Demonstrating robustness with intense emotions like <em>"A fearful person filled with fear"</em> and <em>"An angry man, fierce and imposing"</em>.
+                    </p>
+                </div>
+            </div> -->
+
+        </div>
+    </section>
+
+    <!-- Results Comparison -->
+    <section id="results" class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-6 text-gray-900">Reconstruction Comparison</h2>
+                <p class="text-left text-gray-600 mb-12 max-w-5xl mx-auto">
+                The visual comparison results for different 4D avatars, including INSTA, FlashAvatar, SplattingAvatar, PointAvatar, FLARE and Ours.
+            </p>
+            
+            <!-- Scrollable Comparison Gallery -->
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-inner mb-12">
+                
+                <!-- <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">1</div>
+                    <h3 class="text-xl font-bold text-gray-800">Qualitative comparison</h3>
+                </div>  -->
+
+                <div class="overflow-x-auto gallery-scroll pb-4">
+                    <div class="min-w-[1000px] bg-white rounded-lg border border-gray-300 shadow-sm p-4 space-y-6">
+                        
+                        <div>
+                            <!-- <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-2 font-semibold">Sample 1</span> -->
+                            <img src="compare_with sota_reconstruct.png" alt="Comparison Sample 1" class="w-full h-auto block mx-auto rounded border border-gray-100" style="width: 85%;">
+                        </div>
+            
+                        <!-- <hr class="border-dashed border-gray-200">
+            
+                        <div>
+                            <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full mb-2 font-semibold">Sample 2</span>
+                            <img src="demo12.png" alt="Comparison Sample 2" class="w-full h-auto block rounded border border-gray-100">
+                        </div>
+            
+                        <hr class="border-dashed border-gray-200">
+            
+                        <div>
+                            <span class="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full mb-2 font-semibold">Sample 3</span>
+                            <img src="demo13.png" alt="Comparison Sample 3" class="w-full h-auto block rounded border border-gray-100">
+                        </div> -->
+            
+                    </div>
+                </div>
+                
+                <p class="text-center text-xs text-gray-400 mt-1">
+                    Qualitative comparison across five different identities.
+                </p>
+
+                <!-- <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">2</div>
+                    <h3 class="text-xl font-bold text-gray-800">Quantitative Comparison</h3>
+                </div>                
+                <div class="overflow-x-auto">
+                    <h3 class="font-bold text-lg mb-4 text-left md:text-center">Quantitative comparison on the test set of our collected dataset from different comparison approaches.</h3>
+                    <table class="min-w-full text-sm text-center border-collapse">
+                        <thead>
+                            <tr class="bg-gray-900 text-white">
+                                <th class="py-3 px-4 rounded-tl-lg">Method</th>
+                                <th class="py-3 px-4">PSNR ↑</th>
+                                <th class="py-3 px-4">SSIM ↑</th>
+                                <th class="py-3 px-4">LPIPS ↓</th>
+                                <th class="py-3 px-4">MSE ↓</th>
+                                <th class="py-3 px-4 rounded-tr-lg">L1 ↓</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white border border-gray-200 shadow-sm">
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="py-3 px-4 font-medium text-gray-600">FLARE</td>
+                                <td class="py-3 px-4">25.6670</td>
+                                <td class="py-3 px-4">0.9122</td>
+                                <td class="py-3 px-4">0.0592</td>
+                                <td class="py-3 px-4">0.05921</td>
+                                <td class="py-3 px-4">0.0123</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="py-3 px-4 font-medium text-gray-600">INSTA</td>
+                                <td class="py-3 px-4">26.6980</td>
+                                <td class="py-3 px-4">0.9268</td>
+                                <td class="py-3 px-4">0.0912</td>
+                                <td class="py-3 px-4">0.0509</td>
+                                <td class="py-3 px-4">0.0151</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="py-3 px-4 font-medium text-gray-600">SPLAvatar</td>
+                                <td class="py-3 px-4">25.6255</td>
+                                <td class="py-3 px-4">0.9223</td>
+                                <td class="py-3 px-4">0.0979</td>
+                                <td class="py-3 px-4">0.0533</td>
+                                <td class="py-3 px-4">0.0139</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="py-3 px-4 font-medium text-gray-600">FlashAvatar</td>
+                                <td class="py-3 px-4">28.7674</td>
+                                <td class="py-3 px-4">0.9415</td>
+                                <td class="py-3 px-4">0.0563</td>
+                                <td class="py-3 px-4">0.0406</td>
+                                <td class="py-3 px-4">0.0110</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="py-3 px-4 font-medium text-gray-600">GBS</td>
+                                <td class="py-3 px-4">27.9699</td>
+                                <td class="py-3 px-4">0.9390</td>
+                                <td class="py-3 px-4">0.1051</td>
+                                <td class="py-3 px-4">0.0436</td>
+                                <td class="py-3 px-4">0.0126</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="py-3 px-4 font-medium text-gray-600">HRAvatar</td>
+                                <td class="py-3 px-4">29.3708</td>
+                                <td class="py-3 px-4">0.9407</td>
+                                <td class="py-3 px-4">0.0776</td>
+                                <td class="py-3 px-4">0.0414</td>
+                                <td class="py-3 px-4">0.0121</td>
+                            </tr>
+                            <tr class="bg-blue-50 hover:bg-blue-100 transition border-l-4 border-blue-500">
+                                <td class="py-3 px-4 font-bold text-blue-800">Ours</td>
+                                <td class="py-3 px-4 font-bold text-blue-800">29.9664</td>
+                                <td class="py-3 px-4 font-bold text-blue-800">0.9431</td>
+                                <td class="py-3 px-4 font-bold text-blue-800">0.0557</td>
+                                <td class="py-3 px-4 font-bold text-blue-800">0.0350</td>
+                                <td class="py-3 px-4 font-bold text-blue-800">0.0101</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>             -->
+            </div>
+            
+            <h2 class="text-3xl font-bold text-center mb-6 text-gray-900">Relighting Comparison</h2>
+            <p class="text-center text-gray-600 mb-12 max-w-5xl mx-auto">
+                Relighting Comparison against FLARE and PointAvatar under different illumination conditions.
+            </p>
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-inner mb-12">
+                <div class="overflow-x-auto gallery-scroll pb-4">
+                    <div class="min-w-[1000px] bg-white rounded-lg border border-gray-300 shadow-sm p-4 space-y-6">
+                        
+                        <div>
+                            <!-- <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-2 font-semibold">Albedo, Normal and Relighting Comparison</span> -->
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">1</div>
+                                <h3 class="text-xl font-bold text-gray-800">Shading Attributes and Relighting Results</h3>
+                            </div>                             
+                            <img src="relightcompare1.jpg" alt="Comparison Sample 1" class="w-full h-auto block rounded border border-gray-100">
+                        </div>
+            
+                        <hr class="border-dashed border-gray-200">
+            
+                        <div>
+                            <!-- <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full mb-2 font-semibold">Sample 2</span> -->
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">2</div>
+                                <h3 class="text-xl font-bold text-gray-800">More Relighting Results</h3>
+                            </div>                            
+                            <img src="relighting compare_appendix.jpg" alt="Comparison Sample 2" class="w-full h-auto block rounded border border-gray-100">
+                        </div>
+            
+                    </div>
+                </div>
+                
+                <p class="text-center text-xs text-gray-400 mt-1">
+                    Qualitative comparison across four different identities.
+                </p>
+            </div>
+
+            <!-- <h2 class="text-3xl font-bold text-center mb-6 text-gray-900">Dynamic Comparison</h2>
+            <p class="text-center text-gray-600 mb-12 max-w-3xl mx-auto">
+                Relighting Comparison with FLARE (FLARE, RGAvatar, HRAvatar).
+            </p>             -->
+            <!-- Quantitative Table -->
+            <!-- <div class="overflow-x-auto">
+                <h3 class="font-bold text-lg mb-4 text-left md:text-center">Quantitative comparison on the test set of our collected dataset from different comparison approaches.</h3>
+                <table class="min-w-full text-sm text-center border-collapse">
+                    <thead>
+                        <tr class="bg-gray-900 text-white">
+                            <th class="py-3 px-4 rounded-tl-lg">Method</th>
+                            <th class="py-3 px-4">PSNR ↑</th>
+                            <th class="py-3 px-4">SSIM ↑</th>
+                            <th class="py-3 px-4">LPIPS ↓</th>
+                            <th class="py-3 px-4">MSE ↓</th>
+                            <th class="py-3 px-4 rounded-tr-lg">L1 ↓</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white border border-gray-200 shadow-sm">
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 font-medium text-gray-600">FLARE</td>
+                            <td class="py-3 px-4">25.6670</td>
+                            <td class="py-3 px-4">0.9122</td>
+                            <td class="py-3 px-4">0.0592</td>
+                            <td class="py-3 px-4">0.05921</td>
+                            <td class="py-3 px-4">0.0123</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 font-medium text-gray-600">INSTA</td>
+                            <td class="py-3 px-4">26.6980</td>
+                            <td class="py-3 px-4">0.9268</td>
+                            <td class="py-3 px-4">0.0912</td>
+                            <td class="py-3 px-4">0.0509</td>
+                            <td class="py-3 px-4">0.0151</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 font-medium text-gray-600">SPLAvatar</td>
+                            <td class="py-3 px-4">25.6255</td>
+                            <td class="py-3 px-4">0.9223</td>
+                            <td class="py-3 px-4">0.0979</td>
+                            <td class="py-3 px-4">0.0533</td>
+                            <td class="py-3 px-4">0.0139</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 font-medium text-gray-600">FlashAvatar</td>
+                            <td class="py-3 px-4">28.7674</td>
+                            <td class="py-3 px-4">0.9415</td>
+                            <td class="py-3 px-4">0.0563</td>
+                            <td class="py-3 px-4">0.0406</td>
+                            <td class="py-3 px-4">0.0110</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 font-medium text-gray-600">GBS</td>
+                            <td class="py-3 px-4">27.9699</td>
+                            <td class="py-3 px-4">0.9390</td>
+                            <td class="py-3 px-4">0.1051</td>
+                            <td class="py-3 px-4">0.0436</td>
+                            <td class="py-3 px-4">0.0126</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 font-medium text-gray-600">HRAvatar</td>
+                            <td class="py-3 px-4">29.3708</td>
+                            <td class="py-3 px-4">0.9407</td>
+                            <td class="py-3 px-4">0.0776</td>
+                            <td class="py-3 px-4">0.0414</td>
+                            <td class="py-3 px-4">0.0121</td>
+                        </tr>
+                        <tr class="bg-blue-50 hover:bg-blue-100 transition border-l-4 border-blue-500">
+                            <td class="py-3 px-4 font-bold text-blue-800">Ours</td>
+                            <td class="py-3 px-4 font-bold text-blue-800">29.9664</td>
+                            <td class="py-3 px-4 font-bold text-blue-800">0.9431</td>
+                            <td class="py-3 px-4 font-bold text-blue-800">0.0557</td>
+                            <td class="py-3 px-4 font-bold text-blue-800">0.0350</td>
+                            <td class="py-3 px-4 font-bold text-blue-800">0.0101</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div> -->
+        </div>
+    </section>
+
+
+    
+    <!-- Citation -->
+    <section id="bibtex" class="py-16 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">Citation</h2>
+            <div class="relative bg-gray-900 rounded-xl p-6 shadow-xl overflow-hidden group">
+                <button onclick="copyBibtex()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition p-2 rounded-md hover:bg-gray-700" title="Copy to Clipboard">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+                                <pre class="text-gray-300 font-mono text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed" id="bibtex-content">@article{fan2025rgavatar,
+    title={RGAvatar: Relightable 4D Gaussian avatar from monocular videos},
+    author={Fan, Zhe and Huang, Shi-Sheng and Zhang, Yichi and Shang, Dachao and Zhang, Juyong and Guo, Yudong and Huang, Hua},
+    journal={IEEE Transactions on Visualization and Computer Graphics},
+    year={2025},
+    publisher={IEEE}
+}</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-100 py-10 text-center text-gray-500 text-sm">
+        <p>© 2026 RGAvatar Project. All Rights Reserved.</p>
+        <div class="mt-4 flex justify-center space-x-4">
+            <a href="#" class="hover:text-blue-600 transition"><i class="fa-brands fa-github text-xl"></i></a>
+            <a href="#" class="hover:text-blue-600 transition"><i class="fa-brands fa-twitter text-xl"></i></a>
+        </div>
+    </footer>
+
+    <script>
+        function copyBibtex() {
+            const content = document.getElementById('bibtex-content').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                const btn = document.querySelector('button[onclick="copyBibtex()"] i');
+                btn.className = 'fa-solid fa-check text-green-400';
+                setTimeout(() => {
+                    btn.className = 'fa-regular fa-copy';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
